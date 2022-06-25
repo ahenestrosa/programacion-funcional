@@ -13,8 +13,6 @@ let
             hlint
             p.ihp
             RSA
-            mmark
-            Crypto
         ];
         otherDeps = p: with p; [
             # Native dependencies, e.g. imagemagick
