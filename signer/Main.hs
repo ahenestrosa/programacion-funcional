@@ -8,6 +8,7 @@ import IHP.FrameworkConfig
 import IHP.Job.Types
 import Web.FrontController
 import Web.Types
+import OpenSSL
 
 instance FrontController RootApplication where
     controllers = [
@@ -18,4 +19,4 @@ instance Worker RootApplication where
     workers _ = []
 
 main :: IO ()
-main = IHP.Server.run config
+main = withOpenSSL $ IHP.Server.run config

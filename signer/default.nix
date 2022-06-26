@@ -12,7 +12,7 @@ let
             text
             hlint
             p.ihp
-            RSA
+            HsOpenSSL
         ];
         otherDeps = p: with p; [
             # Native dependencies, e.g. imagemagick

@@ -1,6 +1,6 @@
 -- This file is only a stub file, please see default.nix for adding dependencies.
 --
--- Learn more about dependency management in IHP: https://ih  p.digitallyinduced.com/Guide/package-management.html
+-- Learn more about dependency management in IHP: https://ihp.digitallyinduced.com/Guide/package-management.html
 --
 -- If you're looking at this file because you're trying to integrate a HLS or other tooling with your IHP project, check out the documentation on Editors and Tooling: https://ihp.digitallyinduced.com/Guide/editors.html
 --
