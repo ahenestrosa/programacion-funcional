@@ -12,11 +12,7 @@ data StaticController = WelcomeAction deriving (Eq, Show, Data)
 data MessagesController
     = MessagesAction
     | NewMessageAction
-    | ShowMessageAction { messageId :: !(Id Message) }
     | CreateMessageAction
-    | EditMessageAction { messageId :: !(Id Message) }
-    | UpdateMessageAction { messageId :: !(Id Message) }
-    | DeleteMessageAction { messageId :: !(Id Message) }
     deriving (Eq, Show, Data)
 
 data KeyController

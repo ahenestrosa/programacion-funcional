@@ -6,7 +6,6 @@ data ShowView = ShowView { message :: Message, signature :: String, signature2 :
 instance View ShowView where
     html ShowView { .. } = [hsx|
         {breadcrumb}
-        <h1>Show Message</h1>
         <p>{message}</p>
         <p> {signature} </p>
         <p> {signature2} </p>
@@ -15,6 +14,5 @@ instance View ShowView where
     |]
         where
             breadcrumb = renderBreadcrumb
-                            [ breadcrumbLink "Messages" MessagesAction
-                            , breadcrumbText "Show Message"
+                            [ breadcrumbText "Show Message"
                             ]

@@ -1,10 +1,9 @@
 module Web.Controller.Messages where
 
 import Web.Controller.Prelude as Prelude
-import Web.View.Messages.Index
 import Web.View.Messages.New
-import Web.View.Messages.Edit
 import Web.View.Messages.Show
+import Web.Controller.Key
 
 import OpenSSL
 import OpenSSL.BN
@@ -38,46 +37,10 @@ import Data.Time.Calendar
 import Data.Typeable
 
 instance Controller MessagesController where
-    action MessagesAction = do
-        messages <- query @Message |> fetch
-        render IndexView { .. }
 
     action NewMessageAction = do
         let message = newRecord
         render NewView { .. }
-
-    action ShowMessageAction { messageId } = do
-        message <- fetch messageId
-        currentDay <- currentDayIo
-        keyPair <- retrieveKeyByDay currentDay
-
-
-        let keyStr = Text.unpack(get #pem keyPair)
-
-        let messageStr = Text.unpack(get #text message)
-
-        -- let date = get #date keyObj
-
-        signature <- signMessage digestSHA keyStr messageStr
-        verificationRes <- verifyMessage digestSHA keyStr messageStr signature
-        currDay <- currentDayIo
-
-        render ShowView { message = message, signature = keyStr, signature2 = signature, result = verificationRes == VerifySuccess}
-
-    action EditMessageAction { messageId } = do
-        message <- fetch messageId
-        render EditView { .. }
-
-    action UpdateMessageAction { messageId } = do
-        message <- fetch messageId
-        message
-            |> buildMessage
-            |> ifValid \case
-                Left message -> render EditView { .. }
-                Right message -> do
-                    message <- message |> updateRecord
-                    setSuccessMessage "Message updated"
-                    redirectTo EditMessageAction { .. }
 
     action CreateMessageAction = do
         let message = newRecord @Message
@@ -86,21 +49,28 @@ instance Controller MessagesController where
             |> ifValid \case
                 Left message -> render NewView { .. } 
                 Right message -> do
-                    message <- message |> createRecord
-                    setSuccessMessage "Message created"
-                    redirectTo MessagesAction
+                    currentDay <- currentDayIo
+                    keyPairM <- retrieveKeyCurrentDay
+                    let keyStr = case keyPairM of
+                                    Nothing -> "ERROR" -- todo: hanlde error
+                                    Just keyPair -> Text.unpack(get #pem keyPair)
 
-    action DeleteMessageAction { messageId } = do
-        message <- fetch messageId
-        deleteRecord message
-        setSuccessMessage "Message deleted"
-        redirectTo MessagesAction
+                    let messageStr = Text.unpack(get #text message)
+
+                    -- let date = get #date keyObj
+
+                    signature <- signMessage digestSHA keyStr messageStr
+                    verificationRes <- verifyMessage digestSHA keyStr messageStr signature
+                    currDay <- currentDayIo
+                    setSuccessMessage "Message created"
+                    render ShowView { message = message, signature = keyStr, signature2 = signature, result = verificationRes == VerifySuccess}
+
 
 buildMessage message = message
     |> fill @'["text"]
 
 
-digestSHA = getDigestByName "SHA256" >>= (\md -> let Just d = md in return d)
+
 
 
 --- Sign given digest, pem in string and KeyPair
@@ -123,16 +93,25 @@ verifyMessage digestIo keyPairStr message signature = do
 
 
 
---- Retrieves for an specific day
-retrieveKeyByDay :: (?modelContext :: ModelContext) => Day -> IO Key
+--- Retrieve keyPair for current day, if non existent it generates the key pair
+retrieveKeyCurrentDay :: (?modelContext :: ModelContext) => IO (Maybe Key)
+retrieveKeyCurrentDay = do
+    currentDay <- currentDayIo
+    keyPairM <- retrieveKeyByDay currentDay
+    case keyPairM of
+        --- If exists for current day just return it
+        Just keyPair -> return (Just keyPair)
+        --- If doesnt exists for current day, generate it
+        Nothing -> do
+            newKeyPair <- generateKeyPairToday
+            newKeyPair |> createRecord
+            return (Just newKeyPair)
+
+
+--- Retrieves KeyPair for an specific day
+retrieveKeyByDay :: (?modelContext :: ModelContext) => Day -> IO (Maybe Key)
 retrieveKeyByDay day = do
     result :: [Key] <- sqlQuery "SELECT * FROM key WHERE date = ?" (Only day)
-    let Just key = (Prelude.head result)
-        in return key
+    return (Prelude.head result) 
 
-dateGregorianIo :: IO (Integer, Int, Int) -- :: (year, month, day)
-dateGregorianIo = getCurrentTime >>= return . toGregorian . utctDay
 
-currentDayIo = dateGregorianIo >>= \dateGreg ->
-    let (year, month, day) = dateGreg
-        in return (fromGregorian year month day)

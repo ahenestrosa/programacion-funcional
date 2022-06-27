@@ -61,14 +61,12 @@ instance Controller KeyController where
                     redirectTo EditKeyAction { .. }
 
     action CreateKeyAction = do
-        keyPairStr <- keyPairString
-        let key = newRecord
+        key <- generateKeyPairToday
         key
-            |> buildKey
             |> ifValid \case
                 Left key -> render NewView { .. } 
                 Right key -> do
-                    key <- set #pem (Text.pack keyPairStr) key |> createRecord
+                    key <- key |> createRecord
                     setSuccessMessage "Key created"
                     redirectTo KeysAction
 
@@ -83,7 +81,16 @@ buildKey key = key
 
 rsaKey = generateRSAKey 1024 17 Nothing
 
-digest1 = getDigestByName "SHA256" >>= (\md -> let Just d = md in return d)
-
 keyPairString = rsaKey >>= \key ->
                    writePKCS8PrivateKey key Nothing
+
+
+-- --- Generates key for today
+generateKeyPairToday = do
+    currentDay <- currentDayIo
+    rsaKey <- generateRSAKey 1024 17 Nothing
+    rsaKeyPem <- writePKCS8PrivateKey rsaKey Nothing
+    let newKey = Key {id = def, date = currentDay, pem = Text.pack rsaKeyPem, meta = MetaBag {annotations = [], touchedFields = [], originalDatabaseRecord = Nothing}}
+        in return newKey
+
+    

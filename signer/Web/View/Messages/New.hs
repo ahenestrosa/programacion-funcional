@@ -11,8 +11,7 @@ instance View NewView where
     |]
         where
             breadcrumb = renderBreadcrumb
-                [ breadcrumbLink "Messages" MessagesAction
-                , breadcrumbText "New Message"
+                [ breadcrumbText "New Message"
                 ]
 
 renderForm :: Message -> Html
