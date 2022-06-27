@@ -1,6 +1,6 @@
 module Web.Controller.Messages where
 
-import Web.Controller.Prelude
+import Web.Controller.Prelude as Prelude
 import Web.View.Messages.Index
 import Web.View.Messages.New
 import Web.View.Messages.Edit
@@ -26,9 +26,11 @@ import OpenSSL.PKCS7
 import OpenSSL.RSA
 import OpenSSL.Random
 import OpenSSL.Session
-import Data.ByteString
+import Data.ByteString as BS
 
 import qualified Data.ByteString.Char8 as C
+
+import Data.Text as Text
 
 
 
@@ -45,10 +47,24 @@ instance Controller MessagesController where
 
     action ShowMessageAction { messageId } = do
         message <- fetch messageId
-        sign <- signIO
-        sign2 <- signIO2
-        -- verif <- verification
-        render ShowView { message = message, signature = sign, signature2 = sign2, result = (VerifySuccess == VerifySuccess)}
+        keys <- query @Key |> fetch
+        let maybeKeyObj =  Prelude.head keys
+        let Just keyObj = maybeKeyObj
+        let keyStr = Text.unpack(get #pem keyObj)
+        somePubKey <- readPrivateKey keyStr PwNone
+        let Just publicKey = (toKeyPair @RSAKeyPair (somePubKey))
+        digest <- digest1
+        signature <- sign digest publicKey "hola"
+        render ShowView { message = message, signature = keyStr, signature2 = signature, result = True}
+
+    -- action ShowMessageAction { messageId } = do
+    --     message <- fetch messageId
+    --     keyPairStr <- keyPairString
+    --     somePubKey <- readPrivateKey keyPairStr PwNone
+    --     let Just publicKey = (toKeyPair @RSAKeyPair (somePubKey))
+    --     digest <- digest1
+    --     signature <- sign digest publicKey "hola"
+    --     render ShowView { message = message, signature = keyPairStr, signature2 = signature, result = True}
 
     action EditMessageAction { messageId } = do
         message <- fetch messageId
@@ -90,15 +106,15 @@ rsaKey = generateRSAKey 1024 17 Nothing
 
 digest1 = getDigestByName "SHA256" >>= (\md -> let Just d = md in return d)
 
+keyPairString = rsaKey >>= \key ->
+                    writePublicKey @RSAKeyPair key
+
 
 
 signIO = rsaKey >>= \key ->
          digest1 >>= \dig ->
             sign dig key "hola"
 
-signIO2 = rsaKey >>= \key ->
-         digest1 >>= \dig ->
-            sign dig key "hola"
 
 -- verifyIO signedIO = signedIO >>= \signed ->
 --                     rsaKey >>= \ key ->
@@ -108,6 +124,7 @@ signIO2 = rsaKey >>= \key ->
 -- verification = verifyIO signIO
 
 -- succ = VerifySuccess
+
 
 
 bstring = C.pack "your string"

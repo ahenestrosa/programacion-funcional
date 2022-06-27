@@ -24,11 +24,6 @@ instance Controller PostsController where
                          date2 >>= \d2 ->
                             return (d1 == d2)
 
-        let iog =  getStdGen :: IO StdGen 
-        let keyPair  = iog >>= \g -> return  (generateKeyPair @StdGen g  1)
-
-
-
         render IndexView { posts = (filter (\x -> True) posts) }
 
     action NewPostAction = do
@@ -65,7 +60,7 @@ instance Controller PostsController where
                     redirectTo EditPostAction { .. }
 
     action CreatePostAction = do
-        let post = newRecord @Post
+        let post = Post { title = "", body = "" }
         post
             |> buildPost
             |> ifValid \case

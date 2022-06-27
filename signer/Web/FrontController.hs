@@ -5,6 +5,7 @@ import Web.Controller.Prelude
 import Web.View.Layout (defaultLayout)
 
 -- Controller Imports
+import Web.Controller.Key
 import Web.Controller.Messages
 import Web.Controller.Static
 
@@ -12,6 +13,7 @@ instance FrontController WebApplication where
     controllers = 
         [ startPage WelcomeAction
         -- Generator Marker
+        , parseRoute @KeyController
         , parseRoute @MessagesController
         ]
 
