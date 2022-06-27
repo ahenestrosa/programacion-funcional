@@ -32,9 +32,10 @@ import qualified Data.ByteString.Char8 as C
 
 import Data.Text as Text
 
+import Data.Time.Clock
+import Data.Time.Calendar
 
-
-
+import Data.Typeable
 
 instance Controller MessagesController where
     action MessagesAction = do
@@ -47,24 +48,21 @@ instance Controller MessagesController where
 
     action ShowMessageAction { messageId } = do
         message <- fetch messageId
-        keys <- query @Key |> fetch
-        let maybeKeyObj =  Prelude.head keys
-        let Just keyObj = maybeKeyObj
-        let keyStr = Text.unpack(get #pem keyObj)
-        somePubKey <- readPrivateKey keyStr PwNone
-        let Just publicKey = (toKeyPair @RSAKeyPair (somePubKey))
-        digest <- digest1
-        signature <- sign digest publicKey "hola"
-        render ShowView { message = message, signature = keyStr, signature2 = signature, result = True}
+        currentDay <- currentDayIo
+        keyPair <- retrieveKeyByDay currentDay
 
-    -- action ShowMessageAction { messageId } = do
-    --     message <- fetch messageId
-    --     keyPairStr <- keyPairString
-    --     somePubKey <- readPrivateKey keyPairStr PwNone
-    --     let Just publicKey = (toKeyPair @RSAKeyPair (somePubKey))
-    --     digest <- digest1
-    --     signature <- sign digest publicKey "hola"
-    --     render ShowView { message = message, signature = keyPairStr, signature2 = signature, result = True}
+
+        let keyStr = Text.unpack(get #pem keyPair)
+
+        let messageStr = Text.unpack(get #text message)
+
+        -- let date = get #date keyObj
+
+        signature <- signMessage digestSHA keyStr messageStr
+        verificationRes <- verifyMessage digestSHA keyStr messageStr signature
+        currDay <- currentDayIo
+
+        render ShowView { message = message, signature = keyStr, signature2 = signature, result = verificationRes == VerifySuccess}
 
     action EditMessageAction { messageId } = do
         message <- fetch messageId
@@ -102,29 +100,39 @@ buildMessage message = message
     |> fill @'["text"]
 
 
-rsaKey = generateRSAKey 1024 17 Nothing
-
-digest1 = getDigestByName "SHA256" >>= (\md -> let Just d = md in return d)
-
-keyPairString = rsaKey >>= \key ->
-                    writePublicKey @RSAKeyPair key
+digestSHA = getDigestByName "SHA256" >>= (\md -> let Just d = md in return d)
 
 
+--- Sign given digest, pem in string and KeyPair
+signMessage :: IO Digest -> String -> String -> IO String
+signMessage digestIo keyPairStr message = do
+    someKeyPair <- readPrivateKey keyPairStr PwNone
+    digest <- digestIo
+    let Just keyPair = toKeyPair @RSAKeyPair someKeyPair
+    signature <- sign digest keyPair message
+    return signature
 
-signIO = rsaKey >>= \key ->
-         digest1 >>= \dig ->
-            sign dig key "hola"
 
-
--- verifyIO signedIO = signedIO >>= \signed ->
---                     rsaKey >>= \ key ->
---                     digest1 >>= \dig ->
---                         verifyBS dig signed key bstring
-
--- verification = verifyIO signIO
-
--- succ = VerifySuccess
+--- Verify given digest (io), pem as keypair, original message and signature
+verifyMessage :: IO Digest -> String -> String -> String -> IO VerifyStatus
+verifyMessage digestIo keyPairStr message signature = do
+    someKeyPair <- readPrivateKey keyPairStr PwNone
+    digest <- digestIo
+    let Just keyPair = toKeyPair @RSAKeyPair someKeyPair
+        in verify digest signature keyPair message
 
 
 
-bstring = C.pack "your string"
+--- Retrieves for an specific day
+retrieveKeyByDay :: (?modelContext :: ModelContext) => Day -> IO Key
+retrieveKeyByDay day = do
+    result :: [Key] <- sqlQuery "SELECT * FROM key WHERE date = ?" (Only day)
+    let Just key = (Prelude.head result)
+        in return key
+
+dateGregorianIo :: IO (Integer, Int, Int) -- :: (year, month, day)
+dateGregorianIo = getCurrentTime >>= return . toGregorian . utctDay
+
+currentDayIo = dateGregorianIo >>= \dateGreg ->
+    let (year, month, day) = dateGreg
+        in return (fromGregorian year month day)
