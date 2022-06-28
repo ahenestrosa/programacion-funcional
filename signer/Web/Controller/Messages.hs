@@ -85,7 +85,7 @@ retrieveKeyCurrentDay = do
             let (newKeyPair, newPubKey) = generated
             newKeyPair |> createRecord
             newPubKey |> createRecord
-            
+
             return (Just newKeyPair)
 
 
