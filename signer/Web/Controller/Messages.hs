@@ -13,6 +13,9 @@ import OpenSSL.EVP.Sign
 import OpenSSL.EVP.Verify
 import OpenSSL.PEM
 import OpenSSL.RSA
+import OpenSSL.EVP.Base64
+
+import Data.Text.Encoding
 import Data.ByteString as BS
 
 import qualified Data.ByteString.Char8 as C
@@ -43,11 +46,11 @@ instance Controller MessagesController where
                                     Nothing -> "ERROR" -- todo: hanlde error
                                     Just keyPair -> Text.unpack(get #pem keyPair)
 
-                    let messageStr = Text.unpack(get #text message)
+                    let messageBS = encodeUtf8 (get #text message)
 
-                    signature <- signMessage digestSHA keyStr messageStr
+                    signatureBS <- signMessage digestSHA keyStr messageBS
                     setSuccessMessage "Message created"
-                    render ShowView { message = message, signature = keyStr, signature2 = signature}
+                    render ShowView { message = message, signature = decodeUtf8 messageBS, signature2 = decodeUtf8 (encodeBase64BS signatureBS)}
 
 
 buildMessage message = message
@@ -58,12 +61,12 @@ buildMessage message = message
 
 
 --- Sign given digest, pem in string and KeyPair
-signMessage :: IO Digest -> String -> String -> IO String
+signMessage :: IO Digest -> String -> ByteString -> IO ByteString
 signMessage digestIo keyPairStr message = do
     someKeyPair <- readPrivateKey keyPairStr PwNone
     digest <- digestIo
     let Just keyPair = toKeyPair @RSAKeyPair someKeyPair
-    signature <- sign digest keyPair message
+    signature <- signBS digest keyPair message
     return signature
 
 

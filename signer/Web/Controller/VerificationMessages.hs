@@ -14,8 +14,11 @@ import OpenSSL.EVP.Sign
 import OpenSSL.EVP.Verify
 import OpenSSL.PEM
 import OpenSSL.RSA
+import OpenSSL.EVP.Base64
 
 import Data.Text as Text
+
+import Data.Text.Encoding
 
 instance Controller VerificationMessagesController where
 
@@ -37,10 +40,10 @@ instance Controller VerificationMessagesController where
                                     Just keyPair -> Text.unpack(get #pem keyPair)
 
                     
-                    let messageStr = Text.unpack(get #text verificationMessage)
-                    let signatureStr = Text.unpack(get #signature verificationMessage)
+                    let messageBS = encodeUtf8(get #text verificationMessage)
+                    let signatureBS = decodeBase64BS (encodeUtf8(get #signature verificationMessage))
 
-                    verificationRes <- verifyMessage digestSHA keyStr messageStr signatureStr
+                    verificationRes <- verifyMessage digestSHA keyStr messageBS signatureBS
 
                     setSuccessMessage "VerificationMessage created"
                     render ShowView {verificationMessage = verificationMessage, result = (verificationRes == VerifySuccess)}
@@ -50,9 +53,9 @@ buildVerificationMessage verificationMessage = verificationMessage
 
 
 --- Verify given digest (io), pem as keypair, original message and signature
-verifyMessage :: IO Digest -> String -> String -> String -> IO VerifyStatus
+verifyMessage :: IO Digest -> String -> ByteString -> ByteString -> IO VerifyStatus
 verifyMessage digestIo keyPairStr message signature = do
     someKeyPair <- readPrivateKey keyPairStr PwNone
     digest <- digestIo
     let Just keyPair = toKeyPair @RSAKeyPair someKeyPair
-        in verify digest signature keyPair message
+        in verifyBS digest signature keyPair message
