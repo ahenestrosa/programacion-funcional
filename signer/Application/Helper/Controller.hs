@@ -33,6 +33,7 @@ import Data.ByteString as BS
 ---- Digest for hashing of sign and verify.
 digestSHA = getDigestByName "SHA256" >>= (\md -> let Just d = md in return d)
 
+
 dateGregorianIo :: IO (Integer, Int, Int) -- :: (year, month, day)
 dateGregorianIo = getCurrentTime >>= return . toGregorian . utctDay
 

@@ -10,3 +10,6 @@ instance AutoRoute MessagesController
 
 instance AutoRoute KeyController
 
+
+instance AutoRoute VerificationMessagesController
+

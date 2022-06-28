@@ -24,3 +24,8 @@ data KeyController
     | UpdateKeyAction { keyId :: !(Id Key) }
     | DeleteKeyAction { keyId :: !(Id Key) }
     deriving (Eq, Show, Data)
+
+data VerificationMessagesController
+    = NewVerificationMessageAction
+    | CreateVerificationMessageAction
+    deriving (Eq, Show, Data)

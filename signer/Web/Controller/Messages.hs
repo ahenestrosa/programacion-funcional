@@ -6,25 +6,13 @@ import Web.View.Messages.Show
 import Web.Controller.Key
 
 import OpenSSL
-import OpenSSL.BN
 import OpenSSL.Cipher
-import OpenSSL.DER
-import OpenSSL.DH
-import OpenSSL.DSA
-import OpenSSL.EVP.Base64
-import OpenSSL.EVP.Cipher
 import OpenSSL.EVP.Digest
-import OpenSSL.EVP.Internal
-import OpenSSL.EVP.Open
 import OpenSSL.EVP.PKey
-import OpenSSL.EVP.Seal
 import OpenSSL.EVP.Sign
 import OpenSSL.EVP.Verify
 import OpenSSL.PEM
-import OpenSSL.PKCS7
 import OpenSSL.RSA
-import OpenSSL.Random
-import OpenSSL.Session
 import Data.ByteString as BS
 
 import qualified Data.ByteString.Char8 as C
@@ -57,13 +45,9 @@ instance Controller MessagesController where
 
                     let messageStr = Text.unpack(get #text message)
 
-                    -- let date = get #date keyObj
-
                     signature <- signMessage digestSHA keyStr messageStr
-                    verificationRes <- verifyMessage digestSHA keyStr messageStr signature
-                    currDay <- currentDayIo
                     setSuccessMessage "Message created"
-                    render ShowView { message = message, signature = keyStr, signature2 = signature, result = verificationRes == VerifySuccess}
+                    render ShowView { message = message, signature = keyStr, signature2 = signature}
 
 
 buildMessage message = message
@@ -81,16 +65,6 @@ signMessage digestIo keyPairStr message = do
     let Just keyPair = toKeyPair @RSAKeyPair someKeyPair
     signature <- sign digest keyPair message
     return signature
-
-
---- Verify given digest (io), pem as keypair, original message and signature
-verifyMessage :: IO Digest -> String -> String -> String -> IO VerifyStatus
-verifyMessage digestIo keyPairStr message signature = do
-    someKeyPair <- readPrivateKey keyPairStr PwNone
-    digest <- digestIo
-    let Just keyPair = toKeyPair @RSAKeyPair someKeyPair
-        in verify digest signature keyPair message
-
 
 
 --- Retrieve keyPair for current day, if non existent it generates the key pair
