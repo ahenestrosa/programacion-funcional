@@ -4,6 +4,7 @@ import Web.Controller.Prelude as Prelude
 import Web.View.Messages.New
 import Web.View.Messages.Show
 import Web.Controller.Key
+import Web.Controller.PubKeys
 
 import OpenSSL
 import OpenSSL.Cipher
@@ -80,15 +81,30 @@ retrieveKeyCurrentDay = do
         Just keyPair -> return (Just keyPair)
         --- If doesnt exists for current day, generate it
         Nothing -> do
-            newKeyPair <- generateKeyPairToday
+            generated <- generateKeyPairToday
+            let (newKeyPair, newPubKey) = generated
             newKeyPair |> createRecord
+            newPubKey |> createRecord
+            
             return (Just newKeyPair)
 
 
---- Retrieves KeyPair for an specific day
+
+
+--- Retrieves  KeyPair for an specific day
 retrieveKeyByDay :: (?modelContext :: ModelContext) => Day -> IO (Maybe Key)
 retrieveKeyByDay day = do
     result :: [Key] <- sqlQuery "SELECT * FROM key WHERE date = ?" (Only day)
     return (Prelude.head result) 
+
+
+--- Retrieves PubKey for an specific day
+retrievePubKeyByDay :: (?modelContext :: ModelContext) => Day -> IO (Maybe PubKey)
+retrievePubKeyByDay day = do
+    result :: [PubKey] <- sqlQuery "SELECT * FROM pub_keys WHERE date = ?" (Only day)
+    return (Prelude.head result) 
+
+
+
 
 

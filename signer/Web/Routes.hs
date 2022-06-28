@@ -13,3 +13,6 @@ instance AutoRoute KeyController
 
 instance AutoRoute VerificationMessagesController
 
+
+instance AutoRoute PubKeysController
+

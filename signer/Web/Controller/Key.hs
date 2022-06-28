@@ -61,7 +61,8 @@ instance Controller KeyController where
                     redirectTo EditKeyAction { .. }
 
     action CreateKeyAction = do
-        key <- generateKeyPairToday
+        generated <- generateKeyPairToday
+        let (key, _) = generated
         key
             |> ifValid \case
                 Left key -> render NewView { .. } 
@@ -86,11 +87,17 @@ keyPairString = rsaKey >>= \key ->
 
 
 -- --- Generates key for today
+generateKeyPairToday :: IO (Key, PubKey)
 generateKeyPairToday = do
     currentDay <- currentDayIo
     rsaKey <- generateRSAKey 1024 17 Nothing
+    pubKey <- rsaCopyPublic rsaKey
+
     rsaKeyPem <- writePKCS8PrivateKey rsaKey Nothing
+    rsaPubKeyPem <- writePublicKey pubKey
+
     let newKey = Key {id = def, date = currentDay, pem = Text.pack rsaKeyPem, meta = MetaBag {annotations = [], touchedFields = [], originalDatabaseRecord = Nothing}}
-        in return newKey
+    let newPubKey = PubKey {id = def, date = currentDay, pem = Text.pack rsaPubKeyPem, meta = MetaBag {annotations = [], touchedFields = [], originalDatabaseRecord = Nothing}}
+        in return (newKey, newPubKey)
 
     

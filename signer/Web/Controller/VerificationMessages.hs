@@ -58,4 +58,5 @@ verifyMessage digestIo keyPairStr message signature = do
     someKeyPair <- readPrivateKey keyPairStr PwNone
     digest <- digestIo
     let Just keyPair = toKeyPair @RSAKeyPair someKeyPair
-        in verifyBS digest signature keyPair message
+    publicKey <- rsaCopyPublic keyPair
+    verifyBS digest signature publicKey message
