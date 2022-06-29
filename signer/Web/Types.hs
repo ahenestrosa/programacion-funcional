@@ -12,7 +12,6 @@ data StaticController = WelcomeAction deriving (Eq, Show, Data)
 data MessagesController
     = NewMessageAction
     | CreateMessageAction
-    | SubmitMarkdownAction
     deriving (Eq, Show, Data)
 
 data KeyController

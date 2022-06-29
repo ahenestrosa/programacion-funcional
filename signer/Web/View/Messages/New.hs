@@ -10,10 +10,6 @@ instance View NewView where
 
 
         <form method="POST" action="/CreateMessage" id="" class="new-form">
-            <div class="form-group" id="form-group-message_text">
-                <label for="message_text">Text</label>
-                <input type="text" name="text" id="message_text" class="form-control" />
-            </div>
 
             <div class="form-group" id="form-group-message_file">
                 <input    

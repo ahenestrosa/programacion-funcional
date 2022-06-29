@@ -37,6 +37,5 @@ digestSHA = getDigestByName "SHA256" >>= (\md -> let Just d = md in return d)
 dateGregorianIo :: IO (Integer, Int, Int) -- :: (year, month, day)
 dateGregorianIo = getCurrentTime >>= return . toGregorian . utctDay
 
-currentDayIo = dateGregorianIo >>= \dateGreg ->
-    let (year, month, day) = dateGreg
-        in return (fromGregorian year month day)
+currentDayIo :: IO Day
+currentDayIo = getCurrentTime >>= return . utctDay

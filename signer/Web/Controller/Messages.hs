@@ -55,7 +55,6 @@ instance Controller MessagesController where
         currentDay <- currentDayIo
         keyPairM <- retrieveKeyCurrentDay
 
-        let messageText = param @Text "text"
         let contentBS :: Strict.ByteString =
                 fileOrNothing "markdown"
                 |> fromMaybe (error "no file given")
@@ -68,25 +67,14 @@ instance Controller MessagesController where
                         Nothing -> "ERROR" -- todo: hanlde error
                         Just keyPair -> Text.unpack(get #pem keyPair)
 
-        let messageBS = encodeUtf8 (messageText)
+        -- let messageBS = encodeUtf8 (messageText)
 
         signatureBS <- signMessage digestSHA keyStr contentBS
         setSuccessMessage "Message created"
-        render ShowView { text = decodeUtf8 messageBS, signature = decodeUtf8 (encodeBase64BS signatureBS)}
+        render ShowView { signature = decodeUtf8 (encodeBase64BS signatureBS), date = currentDay}
 
 -- TODO: ADD VALIDATION
 
-
-    action SubmitMarkdownAction = do
-        let content :: Text =
-                fileOrNothing "markdown"
-                |> fromMaybe (error "no file given")
-                |> get #fileContent
-                |> cs -- content is a LazyByteString, so we use `cs` to convert it to Text
-
-        -- We can now do anything with the content of the uploaded file
-        -- E.g. printing it to the terminal
-        Prelude.putStrLn content
 
 buildMessage message = message
     |> fill @'["text"]
@@ -120,9 +108,16 @@ retrieveKeyCurrentDay = do
             newKeyPair |> createRecord
             newPubKey |> createRecord
 
+            -- Delete all older KeyPairs than today. PubKeys are persisted
+            deleteKeyPairsOlderThan currentDay
+
             return (Just newKeyPair)
 
 
+deleteKeyPairsOlderThan :: (?modelContext :: ModelContext) => Day -> IO ()
+deleteKeyPairsOlderThan day = do
+    olderKeys :: [Key] <- sqlQuery "SELECT * FROM key where date < ?" (Only day)
+    deleteRecords olderKeys
 
 
 --- Retrieves  KeyPair for an specific day

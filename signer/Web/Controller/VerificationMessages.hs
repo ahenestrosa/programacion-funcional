@@ -37,7 +37,7 @@ instance Controller VerificationMessagesController where
 
         let contentBS :: Strict.ByteString = --TODO: validate, crashea si la length es incorrecta
                 fileOrNothing "file"
-                |> fromMaybe (error "no file given")
+                |> fromMaybe (error "no file given") --TODO: handle error
                 |> get #fileContent
                 |> toChunks
                 |> Strict.concat
@@ -45,7 +45,7 @@ instance Controller VerificationMessagesController where
         let signatureText = param @Text "signature" --TODO: validate
 
         
-        let signatureBS = decodeBase64BS (encodeUtf8(signatureText))
+        let signatureBS = (decodeBase64BS . encodeUtf8) signatureText
 
         verificationRes <- verifyMessage digestSHA pubKeyStr contentBS signatureBS
 
@@ -58,7 +58,7 @@ buildVerificationMessage verificationMessage = verificationMessage
     |> fill @["text","signature","date"]
 
 
---- Verify given digest (io), pem as keypair, original message and signature
+--- Verify given digest (io), pem as keypair, original message byte string and signature
 verifyMessage :: IO Digest -> String -> Strict.ByteString -> Strict.ByteString -> IO VerifyStatus
 verifyMessage digestIo keyPairStr message signature = do
     somePublicKey <- readPublicKey keyPairStr
