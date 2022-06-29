@@ -17,36 +17,40 @@ import OpenSSL.RSA
 import OpenSSL.EVP.Base64
 
 import Data.Text as Text
-
+import Data.ByteString as Strict
+import Data.ByteString.Lazy as Lazy
 import Data.Text.Encoding
 
 instance Controller VerificationMessagesController where
 
     action NewVerificationMessageAction = do
-        let verificationMessage = newRecord
-        render NewView { .. }
+        render NewView {}
 
     action CreateVerificationMessageAction = do
-        let verificationMessage = newRecord @VerificationMessage
-        verificationMessage
-            |> buildVerificationMessage
-            |> ifValid \case
-                Left verificationMessage -> render NewView { .. } 
-                Right verificationMessage -> do
-                    currentDay <- currentDayIo
-                    keyPairM <- retrievePubKeyByDay currentDay
-                    let pubKeyStr = case keyPairM of
-                                    Nothing -> "ERROR" -- todo: hanlde error if pub key not present
-                                    Just pubKey -> Text.unpack(get #pem pubKey)
+        ---- TODO: Add validation of signature and file
+        currentDay <- currentDayIo
+        keyPairM <- retrievePubKeyByDay currentDay
 
-                    
-                    let messageBS = encodeUtf8(get #text verificationMessage)
-                    let signatureBS = decodeBase64BS (encodeUtf8(get #signature verificationMessage))
+        let pubKeyStr = case keyPairM of
+                Nothing -> "ERROR" -- TODO: hanlde error if pub key not present
+                Just pubKey -> Text.unpack(get #pem pubKey)
 
-                    verificationRes <- verifyMessage digestSHA pubKeyStr messageBS signatureBS
+        let contentBS :: Strict.ByteString = --TODO: validate, crashea si la length es incorrecta
+                fileOrNothing "file"
+                |> fromMaybe (error "no file given")
+                |> get #fileContent
+                |> toChunks
+                |> Strict.concat
+        
+        let signatureText = param @Text "signature" --TODO: validate
 
-                    setSuccessMessage "VerificationMessage created"
-                    render ShowView {verificationMessage = verificationMessage, result = (verificationRes == VerifySuccess)}
+        
+        let signatureBS = decodeBase64BS (encodeUtf8(signatureText))
+
+        verificationRes <- verifyMessage digestSHA pubKeyStr contentBS signatureBS
+
+        setSuccessMessage "VerificationMessage created"
+        render ShowView {result = (verificationRes == VerifySuccess)}
 
 
 
@@ -55,7 +59,7 @@ buildVerificationMessage verificationMessage = verificationMessage
 
 
 --- Verify given digest (io), pem as keypair, original message and signature
-verifyMessage :: IO Digest -> String -> ByteString -> ByteString -> IO VerifyStatus
+verifyMessage :: IO Digest -> String -> Strict.ByteString -> Strict.ByteString -> IO VerifyStatus
 verifyMessage digestIo keyPairStr message signature = do
     somePublicKey <- readPublicKey keyPairStr
     digest <- digestIo
