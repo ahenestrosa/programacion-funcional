@@ -48,6 +48,8 @@ instance Controller VerificationMessagesController where
                     setSuccessMessage "VerificationMessage created"
                     render ShowView {verificationMessage = verificationMessage, result = (verificationRes == VerifySuccess)}
 
+
+
 buildVerificationMessage verificationMessage = verificationMessage
     |> fill @["text","signature","date"]
 

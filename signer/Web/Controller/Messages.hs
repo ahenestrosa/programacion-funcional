@@ -17,9 +17,8 @@ import OpenSSL.RSA
 import OpenSSL.EVP.Base64
 
 import Data.Text.Encoding
-import Data.ByteString as BS
-
-import qualified Data.ByteString.Char8 as C
+import Data.ByteString as Strict
+import Data.ByteString.Lazy as Lazy
 
 import Data.Text as Text
 
@@ -31,28 +30,63 @@ import Data.Typeable
 instance Controller MessagesController where
 
     action NewMessageAction = do
-        let message = newRecord
-        render NewView { .. }
+        render NewView {}
+
+    -- action CreateMessageAction = do
+    --     let message = newRecord @Message
+    --     message
+    --         |> buildMessage
+    --         |> ifValid \case
+    --             Left message -> render NewView { .. } 
+    --             Right message -> do
+    --                 currentDay <- currentDayIo
+    --                 keyPairM <- retrieveKeyCurrentDay
+    --                 let keyStr = case keyPairM of
+    --                                 Nothing -> "ERROR" -- todo: hanlde error
+    --                                 Just keyPair -> Text.unpack(get #pem keyPair)
+
+    --                 let messageBS = encodeUtf8 (get #text message)
+
+    --                 signatureBS <- signMessage digestSHA keyStr messageBS
+    --                 setSuccessMessage "Message created"
+    --                 render ShowView { message = message, signature = decodeUtf8 messageBS, signature2 = decodeUtf8 (encodeBase64BS signatureBS)}
 
     action CreateMessageAction = do
-        let message = newRecord @Message
-        message
-            |> buildMessage
-            |> ifValid \case
-                Left message -> render NewView { .. } 
-                Right message -> do
-                    currentDay <- currentDayIo
-                    keyPairM <- retrieveKeyCurrentDay
-                    let keyStr = case keyPairM of
-                                    Nothing -> "ERROR" -- todo: hanlde error
-                                    Just keyPair -> Text.unpack(get #pem keyPair)
+        currentDay <- currentDayIo
+        keyPairM <- retrieveKeyCurrentDay
 
-                    let messageBS = encodeUtf8 (get #text message)
+        let messageText = param @Text "text"
+        let contentBS :: Strict.ByteString =
+                fileOrNothing "markdown"
+                |> fromMaybe (error "no file given")
+                |> get #fileContent
+                |> toChunks
+                |> Strict.concat
 
-                    signatureBS <- signMessage digestSHA keyStr messageBS
-                    setSuccessMessage "Message created"
-                    render ShowView { message = message, signature = decodeUtf8 messageBS, signature2 = decodeUtf8 (encodeBase64BS signatureBS)}
 
+        let keyStr = case keyPairM of
+                        Nothing -> "ERROR" -- todo: hanlde error
+                        Just keyPair -> Text.unpack(get #pem keyPair)
+
+        let messageBS = encodeUtf8 (messageText)
+
+        signatureBS <- signMessage digestSHA keyStr contentBS
+        setSuccessMessage "Message created"
+        render ShowView { text = decodeUtf8 messageBS, signature = decodeUtf8 (encodeBase64BS signatureBS)}
+
+-- TODO: ADD VALIDATION
+
+
+    action SubmitMarkdownAction = do
+        let content :: Text =
+                fileOrNothing "markdown"
+                |> fromMaybe (error "no file given")
+                |> get #fileContent
+                |> cs -- content is a LazyByteString, so we use `cs` to convert it to Text
+
+        -- We can now do anything with the content of the uploaded file
+        -- E.g. printing it to the terminal
+        Prelude.putStrLn content
 
 buildMessage message = message
     |> fill @'["text"]
@@ -62,7 +96,7 @@ buildMessage message = message
 
 
 --- Sign given digest, pem in string and KeyPair
-signMessage :: IO Digest -> String -> ByteString -> IO ByteString
+signMessage :: IO Digest -> String -> Strict.ByteString -> IO Strict.ByteString
 signMessage digestIo keyPairStr message = do
     someKeyPair <- readPrivateKey keyPairStr PwNone
     digest <- digestIo
