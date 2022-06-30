@@ -10,15 +10,17 @@ import Web.Controller.VerificationMessages
 import Web.Controller.Key
 import Web.Controller.Messages
 import Web.Controller.Static
+import Web.Controller.Index
 
 instance FrontController WebApplication where
     controllers = 
-        [ startPage WelcomeAction
+        [ startPage IndexAction
         -- Generator Marker
         , parseRoute @PubKeysController
         , parseRoute @VerificationMessagesController
         , parseRoute @KeyController
         , parseRoute @MessagesController
+        , parseRoute @IndexController
         ]
 
 instance InitControllerContext WebApplication where

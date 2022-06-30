@@ -6,13 +6,14 @@ data ShowView = ShowView { result :: Bool }
 instance View ShowView where
     html ShowView { .. } = [hsx|
         {breadcrumb}
-        <h1>Show VerificationMessage</h1>
+        <h1>Show File Signature Verification</h1>
 
         <p>{result}</p>
 
     |]
         where
             breadcrumb = renderBreadcrumb
-                            [ 
-                                breadcrumbText "Show VerificationMessage"
-                            ]
+                [   breadcrumbLink "Index" IndexAction,
+                    breadcrumbLink "Verify Message Signature" CreateVerificationMessageAction,
+                    breadcrumbText "Show Verification"
+                ]

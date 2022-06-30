@@ -1,7 +1,7 @@
 module Web.View.Messages.New where
 import Web.View.Prelude
 
-data NewView = NewView {}
+data NewView = NewView {currentDay :: Text}
 
 instance View NewView where
     html NewView { } = [hsx|
@@ -28,12 +28,6 @@ instance View NewView where
     |]
         where
             breadcrumb = renderBreadcrumb
-                [ breadcrumbText "New Message"
+                [   breadcrumbLink "Index" IndexAction,
+                    breadcrumbText "New Message Signature"
                 ]
-
--- renderForm :: Message -> Html
--- renderForm message = formFor message [hsx|
---     {(textField #text)}
---     {submitButton}
-
--- |]

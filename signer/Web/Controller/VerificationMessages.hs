@@ -55,10 +55,6 @@ instance Controller VerificationMessagesController where
 
 
 
-buildVerificationMessage verificationMessage = verificationMessage
-    |> fill @["text","signature","date"]
-
-
 --- Verify given digest (io), pem as keypair, original message byte string and signature
 verifyMessage :: IO Digest -> String -> Strict.ByteString -> Strict.ByteString -> IO VerifyStatus
 verifyMessage digestIo keyPairStr message signature = do

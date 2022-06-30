@@ -30,26 +30,9 @@ import Data.Typeable
 instance Controller MessagesController where
 
     action NewMessageAction = do
-        render NewView {}
-
-    -- action CreateMessageAction = do
-    --     let message = newRecord @Message
-    --     message
-    --         |> buildMessage
-    --         |> ifValid \case
-    --             Left message -> render NewView { .. } 
-    --             Right message -> do
-    --                 currentDay <- currentDayIo
-    --                 keyPairM <- retrieveKeyCurrentDay
-    --                 let keyStr = case keyPairM of
-    --                                 Nothing -> "ERROR" -- todo: hanlde error
-    --                                 Just keyPair -> Text.unpack(get #pem keyPair)
-
-    --                 let messageBS = encodeUtf8 (get #text message)
-
-    --                 signatureBS <- signMessage digestSHA keyStr messageBS
-    --                 setSuccessMessage "Message created"
-    --                 render ShowView { message = message, signature = decodeUtf8 messageBS, signature2 = decodeUtf8 (encodeBase64BS signatureBS)}
+        currentDay <- currentDayIo
+        render NewView {currentDay = "hi"}
+    
 
     action CreateMessageAction = do
         currentDay <- currentDayIo
@@ -74,10 +57,6 @@ instance Controller MessagesController where
         render ShowView { signature = decodeUtf8 (encodeBase64BS signatureBS), date = currentDay}
 
 -- TODO: ADD VALIDATION
-
-
-buildMessage message = message
-    |> fill @'["text"]
 
 
 

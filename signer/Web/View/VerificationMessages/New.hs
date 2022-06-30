@@ -6,7 +6,7 @@ data NewView = NewView {}
 instance View NewView where
     html NewView {} = [hsx|
         {breadcrumb}
-        <h1>New VerificationMessage</h1>
+        <h1>Verify Message Signature</h1>
 
         <form method="POST" action="/CreateVerificationMessage" id="" class="new-form">
             <div class="form-group" id="form-group-message_text">
@@ -35,7 +35,8 @@ instance View NewView where
     |]
         where
             breadcrumb = renderBreadcrumb
-                [ breadcrumbText "New VerificationMessage"
+                [   breadcrumbLink "Index" IndexAction,
+                    breadcrumbText "Verify Message Signature"
                 ]
 
 
