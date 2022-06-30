@@ -6,23 +6,24 @@ data NewView = NewView {}
 instance View NewView where
     html NewView { } = [hsx|
         {breadcrumb}
-        <h1>New Message</h1>
+        <h1>Sign new file</h1>
 
 
         <form method="POST" action="/CreateMessage" id="" class="new-form">
 
             <div class="form-group" id="form-group-message_file">
+                <label for="file">File to Sign </label>
+                <br/>
                 <input    
                     type="file"
-                    name="markdown"
-                    accept="application/pdf"
+                    name="file"
+                    accept="application/pdf, image/jpg, image/png, text/plain"
                 >
             </div>
 
 
             <button class="btn btn-primary">Create Message</button>
         </form>
-        <!-- {renderForm message} -->
 
     |]
         where

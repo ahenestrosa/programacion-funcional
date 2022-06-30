@@ -56,7 +56,7 @@ instance Controller MessagesController where
         keyPairM <- retrieveKeyCurrentDay
 
         let contentBS :: Strict.ByteString =
-                fileOrNothing "markdown"
+                fileOrNothing "file"
                 |> fromMaybe (error "no file given")
                 |> get #fileContent
                 |> toChunks

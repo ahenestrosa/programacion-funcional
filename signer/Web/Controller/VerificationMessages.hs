@@ -29,11 +29,6 @@ instance Controller VerificationMessagesController where
     action CreateVerificationMessageAction = do
         ---- TODO: Add validation of signature and file
         currentDay <- currentDayIo
-        keyPairM <- retrievePubKeyByDay currentDay
-
-        let pubKeyStr = case keyPairM of
-                Nothing -> "ERROR" -- TODO: hanlde error if pub key not present
-                Just pubKey -> Text.unpack(get #pem pubKey)
 
         let contentBS :: Strict.ByteString = --TODO: validate, crashea si la length es incorrecta
                 fileOrNothing "file"
@@ -43,6 +38,12 @@ instance Controller VerificationMessagesController where
                 |> Strict.concat
         
         let signatureText = param @Text "signature" --TODO: validate
+        let day = param @Day "date"
+
+        keyPairM <- retrievePubKeyByDay day
+        let pubKeyStr = case keyPairM of
+                Nothing -> "ERROR" -- TODO: hanlde error if pub key not present
+                Just pubKey -> Text.unpack(get #pem pubKey)
 
         
         let signatureBS = (decodeBase64BS . encodeUtf8) signatureText
