@@ -1,12 +1,12 @@
 module Web.View.Messages.New where
-import Web.View.Prelude
+import Web.View.Prelude as Prelude
 
-data NewView = NewView {currentDay :: Text}
+data NewView = NewView {dateToday :: Prelude.Day}
 
 instance View NewView where
-    html NewView { } = [hsx|
+    html NewView {.. } = [hsx|
         {breadcrumb}
-        <h1>Sign new file</h1>
+        <h1>Sign new file for {dateToday} (UTC) </h1>
 
 
         <form method="POST" action="/CreateMessage" id="" class="new-form">

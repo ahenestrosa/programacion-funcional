@@ -31,88 +31,62 @@ instance Controller MessagesController where
 
     action NewMessageAction = do
         currentDay <- currentDayIo
-        render NewView {currentDay = "hi"}
+        render NewView {dateToday= currentDay}
     
 
     action CreateMessageAction = do
         currentDay <- currentDayIo
         keyPairM <- retrieveKeyCurrentDay
 
-        let contentBS :: Strict.ByteString =
-                fileOrNothing "file"
-                |> fromMaybe (error "no file given")
-                |> get #fileContent
-                |> toChunks
-                |> Strict.concat
+        case keyPairM of
+            Nothing -> do
+                setErrorMessage  "Failure retrieving KeyPair for today!"
+                render NewView {dateToday= currentDay}
+            Just keyPair -> do
+                let keyStrPem = Text.unpack(get #pem keyPair)
 
+                case fileOrNothing2 (fileOrNothing "file") of
+                    Nothing -> do
+                        setErrorMessage  "Must select a valid file!"
+                        render NewView {dateToday= currentDay}
+                    Just file -> do
 
-        let keyStr = case keyPairM of
-                        Nothing -> "ERROR" -- todo: hanlde error
-                        Just keyPair -> Text.unpack(get #pem keyPair)
+                        let contentBS :: Strict.ByteString = file
+                                |> get #fileContent
+                                |> toChunks
+                                |> Strict.concat
+                        let fileName = file 
+                                |> get #fileName
+                                |> decodeUtf8
 
-        -- let messageBS = encodeUtf8 (messageText)
-
-        signatureBS <- signMessage digestSHA keyStr contentBS
-        setSuccessMessage "Message created"
-        render ShowView { signature = decodeUtf8 (encodeBase64BS signatureBS), date = currentDay}
-
--- TODO: ADD VALIDATION
-
-
+                        maybeSignatureBS <- signMessage digestSHA keyStrPem contentBS
+                        case maybeSignatureBS of
+                            Nothing -> do
+                                setErrorMessage  "Failure while signing file for today"
+                                render NewView {dateToday= currentDay}
+                            Just signatureBS -> do
+                                setSuccessMessage "Message created"
+                                render ShowView { signature = decodeUtf8 (encodeBase64BS signatureBS), date = currentDay, fileName= fileName}
 
 
 
 --- Sign given digest, pem in string and KeyPair
-signMessage :: IO Digest -> String -> Strict.ByteString -> IO Strict.ByteString
+signMessage :: IO Digest -> String -> Strict.ByteString -> IO (Maybe Strict.ByteString)
 signMessage digestIo keyPairStr message = do
     someKeyPair <- readPrivateKey keyPairStr PwNone
     digest <- digestIo
-    let Just keyPair = toKeyPair @RSAKeyPair someKeyPair
-    signature <- signBS digest keyPair message
-    return signature
+    case toKeyPair @RSAKeyPair someKeyPair of
+        Nothing -> return Nothing
+        Just keyPair -> do
+            signature <- signBS digest keyPair message
+            return  (Just signature)
 
-
---- Retrieve keyPair for current day, if non existent it generates the key pair
-retrieveKeyCurrentDay :: (?modelContext :: ModelContext) => IO (Maybe Key)
-retrieveKeyCurrentDay = do
-    currentDay <- currentDayIo
-    keyPairM <- retrieveKeyByDay currentDay
-    case keyPairM of
-        --- If exists for current day just return it
-        Just keyPair -> return (Just keyPair)
-        --- If doesnt exists for current day, generate it
-        Nothing -> do
-            generated <- generateKeyPairToday
-            let (newKeyPair, newPubKey) = generated
-            newKeyPair |> createRecord
-            newPubKey |> createRecord
-
-            -- Delete all older KeyPairs than today. PubKeys are persisted
-            deleteKeyPairsOlderThan currentDay
-
-            return (Just newKeyPair)
-
-
-deleteKeyPairsOlderThan :: (?modelContext :: ModelContext) => Day -> IO ()
-deleteKeyPairsOlderThan day = do
-    olderKeys :: [Key] <- sqlQuery "SELECT * FROM key where date < ?" (Only day)
-    deleteRecords olderKeys
-
-
---- Retrieves  KeyPair for an specific day
-retrieveKeyByDay :: (?modelContext :: ModelContext) => Day -> IO (Maybe Key)
-retrieveKeyByDay day = do
-    result :: [Key] <- sqlQuery "SELECT * FROM key WHERE date = ?" (Only day)
-    return (Prelude.head result) 
-
-
---- Retrieves PubKey for an specific day
-retrievePubKeyByDay :: (?modelContext :: ModelContext) => Day -> IO (Maybe PubKey)
-retrievePubKeyByDay day = do
-    result :: [PubKey] <- sqlQuery "SELECT * FROM pub_keys WHERE date = ?" (Only day)
-    return (Prelude.head result) 
-
-
+--- Validates file is present
+fileOrNothing2 :: Maybe (FileInfo Lazy.ByteString)-> Maybe (FileInfo Lazy.ByteString)
+fileOrNothing2 mFile = case mFile of
+        Nothing -> Nothing
+        Just file -> let fileNameLength = file |> get #fileName |> decodeUtf8|> Text.length
+            in if fileNameLength > 2 then Just file else Nothing
 
 
 

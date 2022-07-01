@@ -1,10 +1,10 @@
 module Web.Controller.VerificationMessages where
 
-import Web.Controller.Prelude
+import Web.Controller.Prelude as Prelude
 import Web.View.VerificationMessages.New
 import Web.View.VerificationMessages.Show
 
-import Web.Controller.Messages 
+import Web.Controller.Key
 
 import OpenSSL
 import OpenSSL.Cipher
@@ -37,21 +37,22 @@ instance Controller VerificationMessagesController where
                 |> toChunks
                 |> Strict.concat
         
-        let signatureText = param @Text "signature" --TODO: validate
-        let day = param @Day "date"
-
-        keyPairM <- retrievePubKeyByDay day
-        let pubKeyStr = case keyPairM of
-                Nothing -> "ERROR" -- TODO: hanlde error if pub key not present
-                Just pubKey -> Text.unpack(get #pem pubKey)
-
+        let signatureBSOrError = getSignatureAsBS (param @Text "signature")
         
-        let signatureBS = (decodeBase64BS . encodeUtf8) signatureText
+        case signatureBSOrError of
+            Right errorMessage -> render NewView {}
+            Left signatureBS -> do
 
-        verificationRes <- verifyMessage digestSHA pubKeyStr contentBS signatureBS
+                let day = param @Day "date"
 
-        setSuccessMessage "VerificationMessage created"
-        render ShowView {result = (verificationRes == VerifySuccess)}
+                keyPairM <- retrievePubKeyByDay day
+                let pubKeyStr = case keyPairM of
+                        Nothing -> "ERROR" -- TODO: hanlde error if pub key not present
+                        Just pubKey -> Text.unpack(get #pem pubKey)
+                verificationRes <- verifyMessage digestSHA pubKeyStr contentBS signatureBS
+
+                setSuccessMessage "VerificationMessage created"
+                render ShowView {result = (verificationRes == VerifySuccess)}
 
 
 
@@ -62,3 +63,15 @@ verifyMessage digestIo keyPairStr message signature = do
     digest <- digestIo
     let Just publicKey = toPublicKey @RSAPubKey somePublicKey
     verifyBS digest signature publicKey message
+
+
+getSignatureAsBS :: Text -> Either Strict.ByteString Text 
+getSignatureAsBS signatureText = 
+    case validateLenght 172 signatureText of
+        False -> Right "Invalid signature: Incorrect size"
+        True -> Left (decodeBase64BS  (encodeUtf8 signatureText))
+
+
+
+validateLenght :: Int-> Text -> Bool
+validateLenght len = (==len) . Text.length

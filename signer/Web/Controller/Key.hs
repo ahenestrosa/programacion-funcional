@@ -1,6 +1,6 @@
 module Web.Controller.Key where
 
-import Web.Controller.Prelude
+import Web.Controller.Prelude as Prelude
 import Web.View.Key.Index
 import Web.View.Key.New
 import Web.View.Key.Edit
@@ -101,3 +101,45 @@ generateKeyPairToday = do
         in return (newKey, newPubKey)
 
     
+--- Retrieve keyPair for current day, if non existent it generates the key pair
+retrieveKeyCurrentDay :: (?modelContext :: ModelContext) => IO (Maybe Key)
+retrieveKeyCurrentDay = do
+    currentDay <- currentDayIo
+    keyPairM <- retrieveKeyByDay currentDay
+    case keyPairM of
+        --- If exists for current day just return it
+        Just keyPair -> return (Just keyPair)
+        --- If doesnt exists for current day, generate it
+        Nothing -> do
+            generated <- generateKeyPairToday
+            let (newKeyPair, newPubKey) = generated
+            newKeyPair |> createRecord
+            newPubKey |> createRecord
+
+            -- Delete all older KeyPairs than today. PubKeys are persisted
+            deleteKeyPairsOlderThan currentDay
+
+            return (Just newKeyPair)
+
+
+deleteKeyPairsOlderThan :: (?modelContext :: ModelContext) => Day -> IO ()
+deleteKeyPairsOlderThan day = do
+    olderKeys :: [Key] <- sqlQuery "SELECT * FROM key where date < ?" (Only day)
+    deleteRecords olderKeys
+
+
+--- Retrieves  KeyPair for an specific day
+retrieveKeyByDay :: (?modelContext :: ModelContext) => Day -> IO (Maybe Key)
+retrieveKeyByDay day = do
+    result :: [Key] <- sqlQuery "SELECT * FROM key WHERE date = ?" (Only day)
+    return (Prelude.head result) 
+
+
+--- Retrieves PubKey for an specific day
+retrievePubKeyByDay :: (?modelContext :: ModelContext) => Day -> IO (Maybe PubKey)
+retrievePubKeyByDay day = do
+    result :: [PubKey] <- sqlQuery "SELECT * FROM pub_keys WHERE date = ?" (Only day)
+    return (Prelude.head result) 
+
+
+
