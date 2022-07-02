@@ -28,7 +28,6 @@ instance Controller VerificationMessagesController where
         render NewView {}
 
     action CreateVerificationMessageAction = do
-        ---- TODO: Add validation of signature and file
         currentDay <- currentDayIo
         let maybeDay = paramOrNothing @Day "date"
         case maybeDay of

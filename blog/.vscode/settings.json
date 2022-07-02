@@ -1,4 +1,0 @@
-{
-    "nixEnvSelector.nixShellConfig": "${workspaceRoot}/default.nix",
-    "nixEnvSelector.suggestion": false
-}
