@@ -7,12 +7,12 @@ instance View IndexView where
     html IndexView { .. } = [hsx|
         {breadcrumb}
 
-        <h1>Index</h1>
+        <h1>Public Keys</h1>
         <div class="table-responsive">
             <table class="table">
                 <thead>
                     <tr>
-                        <th>PubKey</th>
+                        <th>Date</th>
                         <th></th>
                         <th></th>
                         <th></th>
@@ -31,7 +31,7 @@ instance View IndexView where
 renderPubKey :: PubKey -> Html
 renderPubKey pubKey = [hsx|
     <tr>
-        <td>{pubKey}</td>
+        <td>{get #date pubKey} </td>
         <td><a href={ShowPubKeyAction (get #id pubKey)}>Show</a></td>
     </tr>
 |]
