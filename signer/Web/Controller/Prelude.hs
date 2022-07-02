@@ -39,23 +39,3 @@ import OpenSSL.Session
 import OpenSSL.EVP.Digest
 
 
-
--- someFunc = do
---   g <- newGenIO :: IO SystemRandom
---   let keyPair = Crypto.generateKeyPair g 10
---   let (pubKey, privKey, randG) = keyPair
---     in return (Crypto.public_size pubKey)
-
--- rsaKey = generateRSAKey 1024 17 Nothing
-
--- sign = signBS @RSAKeyPair rsaKey
-
-
--- digest1 = getDigestByName "SHA256" >>= (\md -> let Just d = md in return d)
-
--- signIO = rsaKey >>= \key ->
---          digest1 >>= \dig ->
---             return (signBS dig key "hola")
-
--- pKey = newPKeyRSA rsaKey
-

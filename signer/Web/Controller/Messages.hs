@@ -55,9 +55,7 @@ instance Controller MessagesController where
                                 |> get #fileContent
                                 |> toChunks
                                 |> Strict.concat
-                        let fileName = file 
-                                |> get #fileName
-                                |> decodeUtf8
+                        let fileName = file |> get #fileName |> decodeUtf8
 
                         maybeSignatureBS <- signMessage digestSHA keyStrPem contentBS
                         case maybeSignatureBS of

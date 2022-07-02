@@ -17,6 +17,9 @@ import Data.Text as Text
 
 import qualified Data.ByteString.Char8 as C
 
+---- Digest for hashing of sign and verify.
+digestSHA = getDigestByName "SHA256" >>= (\md -> let Just d = md in return d)
+
 --Generates  RSA KeyPair + Public Key  for today
 generateKeyPairToday :: IO (Key, PubKey)
 generateKeyPairToday = do
@@ -33,6 +36,7 @@ generateKeyPairToday = do
 
     
 --- Retrieve keyPair for current day, if non existent it generates the key pair
+--- and inserts corresponding KeyPair and PublicKey in database
 retrieveKeyCurrentDay :: (?modelContext :: ModelContext) => IO (Maybe Key)
 retrieveKeyCurrentDay = do
     currentDay <- currentDayIo
@@ -53,6 +57,7 @@ retrieveKeyCurrentDay = do
             return (Just newKeyPair)
 
 
+--- Deletes all key pairs older than certain date
 deleteKeyPairsOlderThan :: (?modelContext :: ModelContext) => Day -> IO ()
 deleteKeyPairsOlderThan day = do
     olderKeys :: [Key] <- sqlQuery "SELECT * FROM key where date < ?" (Only day)
