@@ -7,7 +7,7 @@ import Web.View.Layout (defaultLayout)
 -- Controller Imports
 import Web.Controller.PubKeys
 import Web.Controller.VerificationMessages
-import Web.Controller.Key
+import Web.KeyHelper
 import Web.Controller.Messages
 import Web.Controller.Static
 import Web.Controller.Index
@@ -18,7 +18,6 @@ instance FrontController WebApplication where
         -- Generator Marker
         , parseRoute @PubKeysController
         , parseRoute @VerificationMessagesController
-        , parseRoute @KeyController
         , parseRoute @MessagesController
         , parseRoute @IndexController
         ]

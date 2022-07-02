@@ -5,7 +5,7 @@ import Web.View.VerificationMessages.New
 import Web.View.VerificationMessages.Show
 import Web.Controller.Messages
 
-import Web.Controller.Key
+import Web.KeyHelper
 
 import OpenSSL
 import OpenSSL.Cipher

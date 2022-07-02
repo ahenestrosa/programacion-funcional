@@ -17,15 +17,7 @@ data MessagesController
     | CreateMessageAction
     deriving (Eq, Show, Data)
 
-data KeyController
-    = KeysAction
-    | NewKeyAction
-    | ShowKeyAction { keyId :: !(Id Key) }
-    | CreateKeyAction
-    | EditKeyAction { keyId :: !(Id Key) }
-    | UpdateKeyAction { keyId :: !(Id Key) }
-    | DeleteKeyAction { keyId :: !(Id Key) }
-    deriving (Eq, Show, Data)
+data KeyController deriving (Eq, Show, Data)
 
 data VerificationMessagesController
     = NewVerificationMessageAction

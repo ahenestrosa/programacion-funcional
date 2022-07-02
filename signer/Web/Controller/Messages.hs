@@ -3,7 +3,7 @@ module Web.Controller.Messages where
 import Web.Controller.Prelude as Prelude
 import Web.View.Messages.New
 import Web.View.Messages.Show
-import Web.Controller.Key
+import Web.KeyHelper
 import Web.Controller.PubKeys
 
 import OpenSSL
