@@ -11,6 +11,8 @@ instance View ShowView where
         <h3>Sign File for Today &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href={pathTo NewMessageAction} class="btn btn-primary ml-4">+ Sign</a></h3>
         <br>
         <h3>Verify a File Signature<a href={pathTo NewVerificationMessageAction} class="btn btn-primary ml-4">+ Verify</a></h3>
+        <br>
+        <h3>Check all public keys&nbsp;<a href={pathTo PubKeysAction} class="btn btn-primary ml-4">+ Show</a></h3>
     |]
         where
             breadcrumb = renderBreadcrumb

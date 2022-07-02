@@ -8,9 +8,16 @@ instance View ShowView where
         {breadcrumb}
         <h1>Sigature for File</h1>
 
-        <p> {signature} </p>
-        <p> {date} </p>
-        <p> {fileName} </p>
+        <div>
+            <p><b> File signature: </b> </p>
+            <div class="boxed"> 
+                {signature}
+            </div>
+        </div> 
+        <br/>
+
+        <p><b> Date of signature: </b> {date} </p>
+        <p><b> Name of file: </b> {fileName} </p>
 
     |]
         where

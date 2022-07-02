@@ -66,7 +66,7 @@ instance Controller VerificationMessagesController where
 
                                         verificationRes <- verifyMessage digestSHA pubKeyPem contentBS signatureBS
                                         setSuccessMessage "VerificationMessage created"
-                                        render ShowView {result = (verificationRes == VerifySuccess)}
+                                        render ShowView {result = (verificationRes == VerifySuccess), date = day, fileName = fileName}
 
 
 
