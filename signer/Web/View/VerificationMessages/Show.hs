@@ -17,6 +17,6 @@ instance View ShowView where
         where
             breadcrumb = renderBreadcrumb
                 [   breadcrumbLink "Index" IndexAction,
-                    breadcrumbLink "Verify Message Signature" CreateVerificationMessageAction,
+                    breadcrumbLink "Verify Message Signature" NewVerificationMessageAction,
                     breadcrumbText "Show Verification"
                 ]

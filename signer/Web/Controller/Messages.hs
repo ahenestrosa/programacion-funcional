@@ -57,7 +57,8 @@ instance Controller MessagesController where
                                 |> Strict.concat
                         let fileName = file |> get #fileName |> decodeUtf8
 
-                        maybeSignatureBS <- signMessage digestSHA keyStrPem contentBS
+                        digest <- digestSHA
+                        maybeSignatureBS <- signMessage digest keyStrPem contentBS
                         case maybeSignatureBS of
                             Nothing -> do
                                 setErrorMessage  "Failure while signing file for today"
@@ -69,10 +70,9 @@ instance Controller MessagesController where
 
 
 --- Sign given digest, pem in string and KeyPair
-signMessage :: IO Digest -> String -> Strict.ByteString -> IO (Maybe Strict.ByteString)
-signMessage digestIo keyPairStr message = do
+signMessage :: Digest -> String -> Strict.ByteString -> IO (Maybe Strict.ByteString)
+signMessage digest keyPairStr message = do
     someKeyPair <- readPrivateKey keyPairStr PwNone
-    digest <- digestIo
     case toKeyPair @RSAKeyPair someKeyPair of
         Nothing -> return Nothing
         Just keyPair -> do

@@ -63,18 +63,18 @@ instance Controller VerificationMessagesController where
                                         setErrorMessage errorMessage
                                         render NewView {}
                                     Left signatureBS -> do
-
-                                        verificationRes <- verifyMessage digestSHA pubKeyPem contentBS signatureBS
-                                        setSuccessMessage "VerificationMessage created"
+                                        
+                                        digest <- digestSHA
+                                        verificationRes <- verifyMessage digest pubKeyPem contentBS signatureBS
+                                        setSuccessMessage "Verification process completed"
                                         render ShowView {result = (verificationRes == VerifySuccess), date = day, fileName = fileName}
 
 
 
---- Verify given digest (io), pem as keypair, original message byte string and signature
-verifyMessage :: IO Digest -> String -> Strict.ByteString -> Strict.ByteString -> IO VerifyStatus
-verifyMessage digestIo keyPairStr message signature = do
+--- Verify given digest, pem as keypair, original message byte string and signature
+verifyMessage :: Digest -> String -> Strict.ByteString -> Strict.ByteString -> IO VerifyStatus
+verifyMessage digest keyPairStr message signature = do
     somePublicKey <- readPublicKey keyPairStr
-    digest <- digestIo
     let Just publicKey = toPublicKey @RSAPubKey somePublicKey
     verifyBS digest signature publicKey message
 
