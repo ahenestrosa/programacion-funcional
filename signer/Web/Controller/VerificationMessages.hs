@@ -3,6 +3,7 @@ module Web.Controller.VerificationMessages where
 import Web.Controller.Prelude as Prelude
 import Web.View.VerificationMessages.New
 import Web.View.VerificationMessages.Show
+import Web.Controller.Messages
 
 import Web.Controller.Key
 
@@ -29,30 +30,44 @@ instance Controller VerificationMessagesController where
     action CreateVerificationMessageAction = do
         ---- TODO: Add validation of signature and file
         currentDay <- currentDayIo
-
-        let contentBS :: Strict.ByteString = --TODO: validate, crashea si la length es incorrecta
-                fileOrNothing "file"
-                |> fromMaybe (error "no file given") --TODO: handle error
-                |> get #fileContent
-                |> toChunks
-                |> Strict.concat
-        
-        let signatureBSOrError = getSignatureAsBS (param @Text "signature")
-        
-        case signatureBSOrError of
-            Right errorMessage -> render NewView {}
-            Left signatureBS -> do
-
-                let day = param @Day "date"
-
+        let maybeDay = paramOrNothing @Day "date"
+        case maybeDay of
+            Nothing -> do
+                setErrorMessage  "Must select a valid day"
+                render NewView {}
+            Just day -> do
                 keyPairM <- retrievePubKeyByDay day
-                let pubKeyStr = case keyPairM of
-                        Nothing -> "ERROR" -- TODO: hanlde error if pub key not present
-                        Just pubKey -> Text.unpack(get #pem pubKey)
-                verificationRes <- verifyMessage digestSHA pubKeyStr contentBS signatureBS
+                case keyPairM of
+                    Nothing -> do
+                        setErrorMessage  "Public key not present for selected day"
+                        render NewView {}
 
-                setSuccessMessage "VerificationMessage created"
-                render ShowView {result = (verificationRes == VerifySuccess)}
+                    Just pubKey -> do
+                        let pubKeyPem = Text.unpack(get #pem pubKey)
+
+                        case fileOrNothing2 (fileOrNothing "file") of
+                            Nothing -> do
+                                setErrorMessage  "Must select a valid file!"
+                                render NewView {}
+                            Just file -> do
+
+                                let contentBS :: Strict.ByteString = file
+                                        |> get #fileContent
+                                        |> toChunks
+                                        |> Strict.concat
+                                let fileName = file |> get #fileName |> decodeUtf8
+                                
+                                let signatureBSOrError = getSignatureAsBS (param @Text "signature")
+                                
+                                case signatureBSOrError of
+                                    Right errorMessage -> do
+                                        setErrorMessage errorMessage
+                                        render NewView {}
+                                    Left signatureBS -> do
+
+                                        verificationRes <- verifyMessage digestSHA pubKeyPem contentBS signatureBS
+                                        setSuccessMessage "VerificationMessage created"
+                                        render ShowView {result = (verificationRes == VerifySuccess)}
 
 
 
@@ -72,6 +87,5 @@ getSignatureAsBS signatureText =
         True -> Left (decodeBase64BS  (encodeUtf8 signatureText))
 
 
-
-validateLenght :: Int-> Text -> Bool
+validateLenght :: Int -> Text -> Bool
 validateLenght len = (==len) . Text.length
