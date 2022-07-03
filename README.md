@@ -25,6 +25,11 @@ Instalar IHP
 nix-env -f https://downloads.digitallyinduced.com/ihp-new.tar.gz -i ihp-new
 ```
 
+Instalar direnv
+```bash
+sudo apt-get install direnv
+```
+
 ## Ejecucción
 
 Para correr el programa:
