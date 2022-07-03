@@ -75,8 +75,9 @@ instance Controller VerificationMessagesController where
 verifyMessage :: Digest -> String -> Strict.ByteString -> Strict.ByteString -> IO VerifyStatus
 verifyMessage digest keyPairStr message signature = do
     somePublicKey <- readPublicKey keyPairStr
-    let Just publicKey = toPublicKey @RSAPubKey somePublicKey
-    verifyBS digest signature publicKey message
+    case toPublicKey @RSAPubKey somePublicKey of
+        Nothing -> return VerifyFailure
+        Just publicKey -> verifyBS digest signature publicKey message
 
 
 getSignatureAsBS :: Text -> Either Strict.ByteString Text 
