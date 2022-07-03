@@ -15,6 +15,7 @@ instance View ShowView where
     |]
         where
             breadcrumb = renderBreadcrumb
-                            [ breadcrumbLink "PubKeys" PubKeysAction
-                            , breadcrumbText "Show PubKey"
+                            [breadcrumbLink "Index" IndexAction, 
+                             breadcrumbLink "PubKeys" PubKeysAction,
+                             breadcrumbText "Show PubKey"
                             ]

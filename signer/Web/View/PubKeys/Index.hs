@@ -25,7 +25,8 @@ instance View IndexView where
     |]
         where
             breadcrumb = renderBreadcrumb
-                [ breadcrumbLink "PubKeys" PubKeysAction
+                [   breadcrumbLink "Index" IndexAction,
+                    breadcrumbLink "PubKeys" PubKeysAction
                 ]
 
 renderPubKey :: PubKey -> Html
