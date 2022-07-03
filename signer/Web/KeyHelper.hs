@@ -30,8 +30,8 @@ generateKeyPairToday = do
     rsaKeyPem <- writePKCS8PrivateKey rsaKey Nothing
     rsaPubKeyPem <- writePublicKey pubKey
 
-    let newKey = Key {id = def, date = currentDay, pem = Text.pack rsaKeyPem, meta = MetaBag {annotations = [], touchedFields = [], originalDatabaseRecord = Nothing}}
-    let newPubKey = PubKey {id = def, date = currentDay, pem = Text.pack rsaPubKeyPem, meta = MetaBag {annotations = [], touchedFields = [], originalDatabaseRecord = Nothing}}
+    let newKey = newRecord @Key |> set #date currentDay |> set #pem (Text.pack rsaKeyPem)
+    let newPubKey = newRecord @PubKey |> set #date currentDay |> set #pem (Text.pack rsaPubKeyPem)
         in return (newKey, newPubKey)
 
     
