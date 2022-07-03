@@ -30,40 +30,39 @@ instance Controller VerificationMessagesController where
     action CreateVerificationMessageAction = do
         currentDay <- currentDayIo
         let maybeDay = paramOrNothing @Day "date"
+        
         case maybeDay of
             Nothing -> do
                 setErrorMessage  "Must select a valid day"
                 render NewView {}
             Just day -> do
-                keyPairM <- retrievePubKeyByDay day
-                case keyPairM of
+                
+                case fileOrNothing2 (fileOrNothing "file") of
                     Nothing -> do
-                        setErrorMessage  "Public key not present for selected day"
+                        setErrorMessage  "Must select a valid file!"
                         render NewView {}
-
-                    Just pubKey -> do
-                        let pubKeyPem = Text.unpack(get #pem pubKey)
-
-                        case fileOrNothing2 (fileOrNothing "file") of
-                            Nothing -> do
-                                setErrorMessage  "Must select a valid file!"
+                    Just file -> do
+                        let contentBS :: Strict.ByteString = file
+                                |> get #fileContent
+                                |> toChunks
+                                |> Strict.concat
+                        let fileName = file |> get #fileName |> decodeUtf8
+                        let signatureBSOrError = getSignatureAsBS (param @Text "signature")
+                        
+                        case signatureBSOrError of
+                            Right errorMessage -> do
+                                setErrorMessage errorMessage
                                 render NewView {}
-                            Just file -> do
-
-                                let contentBS :: Strict.ByteString = file
-                                        |> get #fileContent
-                                        |> toChunks
-                                        |> Strict.concat
-                                let fileName = file |> get #fileName |> decodeUtf8
+                            Left signatureBS -> do
+                                keyPairM <- retrievePubKeyByDay day
                                 
-                                let signatureBSOrError = getSignatureAsBS (param @Text "signature")
-                                
-                                case signatureBSOrError of
-                                    Right errorMessage -> do
-                                        setErrorMessage errorMessage
-                                        render NewView {}
-                                    Left signatureBS -> do
+                                case keyPairM of
+                                    Nothing -> do
+                                        setErrorMessage  "Public key not present for selected day"
+                                        render ShowView {result = False, date = day, fileName = fileName}
+                                    Just pubKey -> do
                                         
+                                        let pubKeyPem = Text.unpack(get #pem pubKey)
                                         digest <- digestSHA
                                         verificationRes <- verifyMessage digest pubKeyPem contentBS signatureBS
                                         setSuccessMessage "Verification process completed"

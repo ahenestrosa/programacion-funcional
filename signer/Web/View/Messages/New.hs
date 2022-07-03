@@ -22,7 +22,7 @@ instance View NewView where
             </div>
 
 
-            <button class="btn btn-primary">Create Message</button>
+            <button class="btn btn-primary">Sign</button>
         </form>
 
     |]
