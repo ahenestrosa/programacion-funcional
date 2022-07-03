@@ -6,6 +6,11 @@ Aplicación diseñada con Haskell e IHP para el firmado de archivos en una fecha
 
 Se asume que se usa Linux con Ubuntu/Debian/Mint/Fedora.
 
+Clonar este repositorio:
+```bash
+git clone git@github.com:ahenestrosa/programacion-funcional.git
+```
+
 Instalar Nix packet manager:
 ```bash
 sudo apt update
@@ -16,7 +21,7 @@ curl -L https://nixos.org/nix/install | sh
 ```
 
 Instalar IHP
-```
+```bash
 nix-env -f https://downloads.digitallyinduced.com/ihp-new.tar.gz -i ihp-new
 ```
 
@@ -27,6 +32,8 @@ Para correr el programa:
 cd signer
 ./start
 ```
+
+> La primera vez puede tardar bastante porque se instalan todos los paquetes y dependencias.
 
 Se levantará la webapp en el puerto 8000 de localhost:
 
