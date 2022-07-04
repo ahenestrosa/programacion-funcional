@@ -79,7 +79,7 @@ signMessage digest keyPairStr message = do
             signature <- signBS digest keyPair message
             return  (Just signature)
 
---- Validates file is has a valid fileName (fileOrNothing vies Just file even with empty file)
+--- Validates file is has a valid fileName (fileOrNothing returns Just file even with empty file)
 fileOrNothing2 :: Maybe (FileInfo Lazy.ByteString)-> Maybe (FileInfo Lazy.ByteString)
 fileOrNothing2 mFile = case mFile of
         Nothing -> Nothing

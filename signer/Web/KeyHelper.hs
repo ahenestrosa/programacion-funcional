@@ -17,9 +17,6 @@ import Data.Text as Text
 
 import qualified Data.ByteString.Char8 as C
 
----- Digest for hashing of sign and verify.
-digestSHA = getDigestByName "SHA256" >>= (\md -> let Just d = md in return d)
-
 --Generates  RSA KeyPair + Public Key  for today
 generateKeyPairToday :: IO (Key, PubKey)
 generateKeyPairToday = do
@@ -76,6 +73,10 @@ retrievePubKeyByDay :: (?modelContext :: ModelContext) => Day -> IO (Maybe PubKe
 retrievePubKeyByDay day = do
     result :: [PubKey] <- sqlQuery "SELECT * FROM pub_keys WHERE date = ?" (Only day)
     return (Prelude.head result) 
+
+
+---- Digest for hashing of sign and verify.
+digestSHA = getDigestByName "SHA256" >>= (\md -> let Just d = md in return d)
 
 
 
